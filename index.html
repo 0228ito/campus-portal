@@ -65,8 +65,8 @@
       animation: slideUp 0.25s ease-out forwards;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translate(-50%, -10px); }
-      to { opacity: 1; transform: translate(-50%, 0); }
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .animate-fade-in {
       animation: fadeIn 0.2s ease-out forwards;
@@ -419,9 +419,9 @@
 
                 {/* ⚡【ダイレクト・アンサーカード】 */}
                 {activeDirectAnswer && (
-                  <div className="bg-gradient-to-r from-emerald-900/80 via-teal-900/60 to-slate-800 p-3 rounded-2xl border border-emerald-500/40 shadow-xl space-y-1.5 animate-fade-in w-full break-words">
+                  <div className="bg-gradient-to-r from-emerald-900/80 via-teal-900/60 to-slate-800 p-3 rounded-2xl border border-emerald-500/40 shadow-xl space-y-1.5 animate-fade-in w-full max-w-full overflow-hidden break-words">
                     <div className="flex justify-between items-center gap-1">
-                      <span className="font-black text-xs text-emerald-300 flex items-center gap-1 truncate">
+                      <span className="font-black text-xs text-emerald-300 flex items-center gap-1 truncate min-w-0">
                         <span className="material-icons text-amber-400 text-sm flex-shrink-0">bolt</span>
                         <span className="truncate">{activeDirectAnswer.title}</span>
                       </span>
