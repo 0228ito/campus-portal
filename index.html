@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="overflow-x-hidden">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大学生向けリアル情報ポータル (2026 UI & スマート検索対応)</title>
+  <!-- スマホの画面幅に合わせて自動スケーリングするメタタグ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>大学生向けリアル情報ポータル (スマホ最適化版)</title>
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Material Icons Font -->
@@ -16,10 +18,24 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #0f172a;
+      background-color: #020617;
       color: #0f172a;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    /* 横スクロールバーの非表示 */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
     /* フローティングハートアニメーション */
     @keyframes floatUp {
@@ -33,14 +49,14 @@
     /* 弾むバウンスアニメーション */
     @keyframes springBounce {
       0% { transform: scale(1); }
-      35% { transform: scale(1.22); }
-      65% { transform: scale(0.92); }
+      35% { transform: scale(1.18); }
+      65% { transform: scale(0.95); }
       100% { transform: scale(1); }
     }
     .animate-bounce-click {
       animation: springBounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    /* アニメーション表示用 */
+    /* モーダル表示アニメーション */
     @keyframes slideUp {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
@@ -55,19 +71,25 @@
     .animate-fade-in {
       animation: fadeIn 0.2s ease-out forwards;
     }
-    /* シマーアニメーション（認証バッジ用） */
+    /* ホログラムオーラグラデーション（SNSカード用） */
+    .hologram-card {
+      background: linear-gradient(135deg, #0f172a 0%, #022c22 40%, #1e1b4b 100%);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+    }
+    /* シマーアニメーション */
     @keyframes shimmer {
       0% { background-position: -200% 0; }
       100% { background-position: 200% 0; }
     }
     .shimmer-bg {
-      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
       background-size: 200% 100%;
-      animation: shimmer 3s infinite;
+      animation: shimmer 2.5s infinite;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-800 min-h-screen">
+<body class="bg-slate-950 text-slate-100 min-h-screen overflow-x-hidden">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -107,7 +129,7 @@
         isLiked: false,
         image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=60",
         comments: [
-          { id: 201, user: "物理2年", text: "助かりました！わざわざ見に見に行かずに済みました", time: "5日前" }
+          { id: 201, user: "物理2年", text: "助かりました！わざわざ見に行かずに済みました", time: "5日前" }
         ]
       },
       {
@@ -127,25 +149,25 @@
       }
     ];
 
-    // AI要約ダイレクト回答データ（キーワードやタグごとに即回答を表示）
+    // AI要約ダイレクト回答データ
     const DIRECT_ANSWERS = {
       "過去問": {
-        title: "⚡ 【AI要約】『過去問・テスト対策』の要点",
-        summary: "『マクロ経済学Ⅰ』は最終回講義で強調された【問3の計算問題】が期末テストの8割を占めます。対策ノート（経済3年投稿）が840回閲覧されており信頼度最高です。",
+        title: "⚡ 『過去問・テスト対策』の要点",
+        summary: "『マクロ経済学Ⅰ』は最終回講義で強調された【問3の計算問題】が期末テストの8割を占めます。対策ノート（経済3年投稿）が信頼度最高です。",
         tag: "授業・過去問"
       },
       "休講": {
-        title: "⚡ 【AI要約】『今日の休講・補講』速報",
+        title: "⚡ 『今日の休講・補講』速報",
         summary: "理学部2号館ロビー掲示板の最新情報：今週の補講・休講一覧が投稿済みです。教養棟2階掲示板の変更情報もリアルタイム反映中。",
         tag: "休講・掲示板"
       },
       "グルメ": {
-        title: "⚡ 【AI要約】『学食・キャンパスグルメ』のお得情報",
+        title: "⚡ 『学食・グルメ』のお得情報",
         summary: "北部食堂の期間限定ビビンバ丼が人気！生協アプリで事前エントリーすると100円引きクーポンの適用が可能です。",
         tag: "グルメ・学食"
       },
       "楽単": {
-        title: "⚡ 【AI要約】『単位取得・履修』の攻略ヒント",
+        title: "⚡ 『単位取得・履修』の攻略ヒント",
         summary: "経済学部教養科目・マクロ経済学Ⅰは過去問解法メモの参照で単位取得率が大幅UP。出席確認はランダムです。",
         tag: "授業・過去問"
       }
@@ -154,7 +176,7 @@
     function App() {
       const [currentTab, setCurrentTab] = useState(0);
       const [posts, setPosts] = useState(INITIAL_POSTS);
-      const [userThanks, setUserThanks] = useState(132);
+      const [userThanks, setUserThanks] = useState(143);
       const [userGrade] = useState(3);
       
       // 検索＆フィルターステート
@@ -166,13 +188,13 @@
       const [openNewPostModal, setOpenNewPostModal] = useState(false);
       const [openReportModal, setOpenReportModal] = useState(false);
       
-      // 新規投稿フォーム入力状態
+      // フォーム入力状態
       const [newTitle, setNewTitle] = useState("");
       const [newContent, setNewContent] = useState("");
       const [newCategory, setNewCategory] = useState("授業・過去問");
       const [commentInput, setCommentInput] = useState("");
 
-      // パーティクルアニメーション＆トースト管理
+      // アニメーション＆トースト
       const [floatingHearts, setFloatingHearts] = useState([]);
       const [toastMessage, setToastMessage] = useState(null);
 
@@ -183,8 +205,6 @@
 
       const handleThanks = (e, postId) => {
         e.stopPropagation();
-        
-        // 押下位置からハートを飛ばす
         const rect = e.currentTarget.getBoundingClientRect();
         const heartId = Date.now();
         setFloatingHearts(prev => [
@@ -195,7 +215,6 @@
           setFloatingHearts(prev => prev.filter(h => h.id !== heartId));
         }, 900);
 
-        // トータルサンクス増算＆ポスト更新
         setPosts(prevPosts =>
           prevPosts.map(p => {
             if (p.id === postId) {
@@ -203,7 +222,7 @@
               const thanksDiff = newIsLiked ? 1 : -1;
               if (newIsLiked) {
                 setUserThanks(t => t + 1);
-                showToast(`💖 先輩へ感謝が伝わりました！（あなたの恩送り実績：通算${userThanks + 1}pt）`);
+                showToast(`💖 先輩へ感謝が伝わりました！（通算${userThanks + 1}pt）`);
               }
               return {
                 ...p,
@@ -293,7 +312,6 @@
         });
       }, [posts, searchQuery, selectedTag]);
 
-      // ダイレクト回答（検索キーワードや選択タグにマッチするAI要約）を判定
       const activeDirectAnswer = useMemo(() => {
         if (selectedTag) {
           const match = Object.values(DIRECT_ANSWERS).find(a => a.tag === selectedTag);
@@ -307,80 +325,78 @@
       }, [searchQuery, selectedTag]);
 
       return (
-        <div className="max-w-md mx-auto min-h-screen bg-slate-900 text-slate-100 flex flex-col relative pb-20 border-x border-slate-800 shadow-2xl">
+        <div className="w-full max-w-md mx-auto min-h-screen bg-slate-950 text-slate-100 flex flex-col relative pb-20 border-x border-slate-800/60 shadow-2xl overflow-x-hidden">
           
-          {/* ヘッダー */}
-          <header className="bg-slate-900/90 backdrop-blur-md sticky top-0 z-30 border-b border-slate-800/80 p-3.5">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20">
-                  <span className="material-icons text-lg">school</span>
+          {/* レスポンシブ対応ヘッダー */}
+          <header className="bg-slate-900/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-800/80 px-3 py-2.5 w-full">
+            <div className="flex justify-between items-center w-full gap-1">
+              {/* アプリロゴ・タイトル */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black shadow-lg flex-shrink-0">
+                  <span className="material-icons text-base sm:text-lg">school</span>
                 </div>
-                <div>
-                  <h1 className="font-black text-sm tracking-wide text-white leading-tight">キャンパスリアルポータル</h1>
-                  <span className="text-[10px] text-slate-400 block font-medium">北大公式コミュニティ</span>
+                <div className="min-w-0 flex-1">
+                  <h1 className="font-black text-xs sm:text-sm tracking-tight text-white leading-tight truncate">キャンパスリアルポータル</h1>
+                  <span className="text-[9px] text-slate-400 block font-medium truncate">北大公式コミュニティ</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="bg-emerald-500/15 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1 relative overflow-hidden">
-                  <div className="shimmer-bg absolute inset-0 pointer-events-none" />
-                  <span className="material-icons text-[12px]">verified</span>
-                  <span>北大認証済</span>
+              {/* 右側：認証＆ポイント */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="bg-emerald-500/15 text-emerald-300 text-[9px] font-extrabold px-2 py-1 rounded-full border border-emerald-500/30 flex items-center gap-0.5 relative overflow-hidden">
+                  <span className="material-icons text-[10px]">verified</span>
+                  <span className="hidden xs:inline">北大</span>認証済
                 </div>
-                <div className="bg-amber-400/10 text-amber-300 px-2.5 py-1 rounded-full text-xs font-bold border border-amber-400/20 flex items-center gap-1">
-                  <span className="material-icons text-amber-400 text-sm">stars</span>
+                <div className="bg-amber-400/10 text-amber-300 px-2 py-1 rounded-full text-[10px] sm:text-xs font-black border border-amber-400/20 flex items-center gap-0.5">
+                  <span className="material-icons text-amber-400 text-xs sm:text-sm">stars</span>
                   <span>{userThanks} pt</span>
                 </div>
               </div>
             </div>
           </header>
 
-          {/* メインコンテンツ */}
-          <main className="flex-1 p-3 space-y-3">
+          <main className="flex-1 p-2.5 sm:p-3 space-y-3 w-full max-w-full overflow-x-hidden">
             
-            {/* TABS 0: リアルタイムフィード ＆ スマート検索 */}
+            {/* TAB 0: フィード */}
             {currentTab === 0 && (
-              <div className="space-y-3">
+              <div className="space-y-3 w-full">
                 
-                {/* 🔍【スマート検索エリア】一覧から探す手間を省く検索UI */}
-                <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/60 shadow-lg space-y-2.5 backdrop-blur-sm">
-                  <div className="relative">
-                    <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                {/* 🔍【スマート検索エリア】 */}
+                <div className="bg-slate-800/80 p-2.5 sm:p-3 rounded-2xl border border-slate-700/60 shadow-lg space-y-2 backdrop-blur-sm w-full">
+                  <div className="relative w-full">
+                    <span className="material-icons absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
                     <input 
                       type="text" 
-                      placeholder="欲しい情報をダイレクト検索（例: マクロ経済, 過去問, 休講...）" 
+                      placeholder="欲しい情報をダイレクト検索（マクロ経済, 過去問...）" 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-9 pr-8 py-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-slate-500"
+                      className="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-8 pr-7 py-2 text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-slate-500"
                     />
                     {searchQuery && (
                       <button 
                         onClick={() => setSearchQuery("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                       >
-                        <span className="material-icons text-sm">close</span>
+                        <span className="material-icons text-xs">close</span>
                       </button>
                     )}
                   </div>
 
-                  {/* 口語・シチュエーションタグ */}
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 text-[11px] scrollbar-none">
+                  {/* クイック検索タグ */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 text-[10px] scrollbar-none w-full">
                     <button 
                       onClick={() => setSelectedTag(selectedTag === "授業・過去問" ? "" : "授業・過去問")}
-                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all whitespace-nowrap flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-0.5 flex-shrink-0 ${
                         selectedTag === "授業・過去問" 
-                          ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20' 
+                          ? 'bg-emerald-500 text-slate-950 font-black shadow-md' 
                           : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
                       }`}
                     >
                       <span>#過去問・テスト対策</span>
                     </button>
                     <button 
-                      onClick={() => {
-                        setSearchQuery(searchQuery === "楽単" ? "" : "楽単");
-                      }}
-                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all whitespace-nowrap flex items-center gap-1 ${
+                      onClick={() => setSearchQuery(searchQuery === "楽単" ? "" : "楽単")}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-0.5 flex-shrink-0 ${
                         searchQuery === "楽単" 
                           ? 'bg-amber-400 text-slate-950 font-black' 
                           : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
@@ -390,7 +406,7 @@
                     </button>
                     <button 
                       onClick={() => setSelectedTag(selectedTag === "休講・掲示板" ? "" : "休講・掲示板")}
-                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all whitespace-nowrap flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-0.5 flex-shrink-0 ${
                         selectedTag === "休講・掲示板" 
                           ? 'bg-emerald-500 text-slate-950 font-black' 
                           : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
@@ -398,363 +414,236 @@
                     >
                       <span>#今日の休講</span>
                     </button>
-                    <button 
-                      onClick={() => setSelectedTag(selectedTag === "グルメ・学食" ? "" : "グルメ・学食")}
-                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all whitespace-nowrap flex items-center gap-1 ${
-                        selectedTag === "グルメ・学食" 
-                          ? 'bg-emerald-500 text-slate-950 font-black' 
-                          : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
-                      }`}
-                    >
-                      <span>#学食・クーポン</span>
-                    </button>
                   </div>
                 </div>
 
-                {/* ⚡【ダイレクト・アンサーカード】検索結果一覧から探さなくても答えがわかる */}
+                {/* ⚡【ダイレクト・アンサーカード】 */}
                 {activeDirectAnswer && (
-                  <div className="bg-gradient-to-r from-emerald-900/60 via-teal-900/50 to-slate-800 p-3.5 rounded-2xl border border-emerald-500/40 shadow-xl space-y-1.5 animate-fade-in relative overflow-hidden">
-                    <div className="flex justify-between items-center">
-                      <span className="font-extrabold text-xs text-emerald-300 flex items-center gap-1">
-                        <span className="material-icons text-amber-400 text-sm">bolt</span>
-                        {activeDirectAnswer.title}
+                  <div className="bg-gradient-to-r from-emerald-900/80 via-teal-900/60 to-slate-800 p-3 rounded-2xl border border-emerald-500/40 shadow-xl space-y-1.5 animate-fade-in w-full break-words">
+                    <div className="flex justify-between items-center gap-1">
+                      <span className="font-black text-xs text-emerald-300 flex items-center gap-1 truncate">
+                        <span className="material-icons text-amber-400 text-sm flex-shrink-0">bolt</span>
+                        <span className="truncate">{activeDirectAnswer.title}</span>
                       </span>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold border border-emerald-500/30 flex-shrink-0">
                         AI即回答
                       </span>
                     </div>
-                    <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                    <p className="text-[11px] text-slate-200 leading-relaxed font-medium break-words">
                       {activeDirectAnswer.summary}
                     </p>
-                    <span className="text-[10px] text-slate-400 block pt-1 border-t border-white/5">
-                      💡 下記に学生の投稿詳細と過去問ノート原文をピックアップ表示しています
+                    <span className="text-[9px] text-slate-400 block pt-1 border-t border-white/10">
+                      💡 該当する学生の投稿ノート・過去問原文を下記に表示中
                     </span>
                   </div>
                 )}
 
-                {/* 学部・大学全体の合計サンクス（助け合い）カウンター */}
-                <div className="bg-gradient-to-r from-teal-800 via-emerald-800 to-slate-900 text-white p-3.5 rounded-2xl shadow-md border border-emerald-600/40 relative overflow-hidden">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-icons text-emerald-400 text-sm">groups</span>
-                      <span className="font-extrabold text-xs tracking-wide">今期のキャンパス助け合い状況</span>
+                {/* 学内助け合いカウンター */}
+                <div className="bg-gradient-to-r from-teal-900/80 via-emerald-900/80 to-slate-900 text-white p-3 rounded-2xl shadow-md border border-emerald-600/40 w-full">
+                  <div className="flex justify-between items-center mb-2 gap-1">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="material-icons text-emerald-400 text-sm flex-shrink-0">groups</span>
+                      <span className="font-extrabold text-[11px] sm:text-xs tracking-tight truncate">キャンパス助け合い状況</span>
                     </div>
-                    <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1">
-                      <span className="material-icons text-[11px]">verified</span>
-                      <span>北大認証コミュニティ</span>
+                    <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-400/30 flex-shrink-0">
+                      学内認証コミュ
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-center bg-black/25 p-2 rounded-xl backdrop-blur-sm border border-white/5">
+                  <div className="grid grid-cols-2 gap-1 text-center bg-black/30 p-2 rounded-xl border border-white/5 w-full">
                     <div className="border-r border-white/10 pr-1">
-                      <span className="text-emerald-200 text-[10px] block font-medium">北大全体の累計感謝</span>
-                      <span className="font-black text-amber-300 text-sm flex items-center justify-center gap-1">
-                        <span className="material-icons text-xs text-pink-400">favorite</span>
-                        18,420 <span className="text-[10px] font-normal text-slate-300">回</span>
+                      <span className="text-emerald-200 text-[9px] block">北大累計感謝</span>
+                      <span className="font-black text-amber-300 text-xs sm:text-sm flex items-center justify-center gap-0.5">
+                        <span className="material-icons text-[10px] text-pink-400">favorite</span>
+                        18,420<span className="text-[9px] font-normal text-slate-300">回</span>
                       </span>
                     </div>
                     <div className="pl-1">
-                      <span className="text-emerald-200 text-[10px] block font-medium">経済学部の貢献状況</span>
-                      <span className="font-black text-emerald-300 text-sm flex items-center justify-center gap-1">
-                        <span className="material-icons text-xs text-emerald-400">emoji_events</span>
-                        3,850 <span className="text-[10px] font-normal text-slate-300">pt (全学部2位)</span>
+                      <span className="text-emerald-200 text-[9px] block">経済学部貢献</span>
+                      <span className="font-black text-emerald-300 text-xs sm:text-sm">
+                        3,850<span className="text-[9px] font-normal text-slate-300">pt(2位)</span>
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* 告知ヘッダー */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 p-3 rounded-2xl shadow-sm text-xs flex justify-between items-center">
-                  <div>
-                    <span className="font-black block text-sm">💡 後輩への恩送りキャンペーン中</span>
-                    <span className="text-slate-900 font-bold text-[11px]">講義・過去問写真の投稿で +10サンクスGET！</span>
+                {/* 告知キャンペーンバナー */}
+                <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 p-2.5 sm:p-3 rounded-2xl shadow-sm text-xs flex justify-between items-center gap-2 w-full">
+                  <div className="min-w-0">
+                    <span className="font-black block text-xs truncate">💡 後輩への恩送りキャンペーン中</span>
+                    <span className="text-slate-900 font-bold text-[10px] block truncate">講義ノート・写真投稿で +10pt獲得！</span>
                   </div>
                   <button 
                     onClick={() => setOpenNewPostModal(true)}
-                    className="bg-slate-950 text-amber-400 px-3 py-1.5 rounded-xl font-black shadow hover:bg-slate-900 text-xs"
+                    className="bg-slate-950 text-amber-400 px-2.5 py-1.5 rounded-xl font-black text-[10px] sm:text-xs flex-shrink-0 shadow hover:bg-slate-900"
                   >
                     投稿する
                   </button>
                 </div>
 
-                {/* 検索・絞り込み件数表示 */}
-                {(searchQuery || selectedTag) && (
-                  <div className="flex justify-between items-center text-xs text-slate-400 px-1 pt-1">
-                    <span>該当情報：<strong className="text-emerald-400 font-bold">{filteredPosts.length}</strong> 件</span>
-                    <button 
-                      onClick={() => { setSearchQuery(""); setSelectedTag(""); }}
-                      className="text-emerald-400 underline text-[11px]"
-                    >
-                      条件クリア
-                    </button>
-                  </div>
-                )}
-
-                {/* ポスト一覧 */}
-                {filteredPosts.length === 0 ? (
-                  <div className="bg-slate-800/40 p-8 rounded-2xl text-center border border-slate-800 text-slate-400 text-xs">
-                    <span className="material-icons text-3xl mb-1 text-slate-500">search_off</span>
-                    <p>該当する投稿が見つかりませんでした。</p>
-                  </div>
-                ) : (
-                  filteredPosts.map(post => (
-                    <div 
-                      key={post.id}
-                      onClick={() => setSelectedPost(post)}
-                      className="bg-slate-800/90 rounded-2xl p-4 shadow-lg border border-slate-700/80 hover:border-emerald-500/50 transition-all cursor-pointer relative group"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-emerald-500/30">
-                            {post.category}
-                          </span>
-                          <span className="text-slate-300 text-xs font-bold">{post.author}</span>
-                          <span className="bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
-                            <span className="material-icons text-[11px] text-emerald-400">verified</span>
-                            <span>北大認証済</span>
-                          </span>
-                        </div>
-                        <span className="text-slate-400 text-[10px]">{post.time}</span>
+                {/* フィード一覧 */}
+                {filteredPosts.map(post => (
+                  <div 
+                    key={post.id}
+                    onClick={() => setSelectedPost(post)}
+                    className="bg-slate-800/90 rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-700/80 hover:border-emerald-500/50 transition-all cursor-pointer relative group w-full break-words"
+                  >
+                    <div className="flex justify-between items-start mb-1.5 gap-1">
+                      <div className="flex items-center gap-1 flex-wrap min-w-0">
+                        <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-500/30">
+                          {post.category}
+                        </span>
+                        <span className="text-slate-300 text-xs font-bold truncate">{post.author}</span>
                       </div>
-
-                      <h2 className="font-black text-white text-sm mb-2 leading-snug group-hover:text-emerald-300 transition-colors">
-                        {post.title}
-                      </h2>
-
-                      <p className="text-xs text-slate-300 mb-3 line-clamp-2 leading-relaxed">
-                        {post.content}
-                      </p>
-
-                      {post.image && (
-                        <div className="mb-3 rounded-xl overflow-hidden max-h-48 bg-slate-900 border border-slate-700">
-                          <img src={post.image} alt="投稿写真" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-
-                      {/* リアクション＆カウンター */}
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-700/60 text-xs">
-                        <div className="flex gap-3 text-slate-400 text-[11px]">
-                          <span className="flex items-center gap-1">
-                            <span className="material-icons text-sm">visibility</span> {post.views}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="material-icons text-sm">chat_bubble_outline</span> {post.commentsCount}
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={(e) => handleThanks(e, post.id)}
-                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs transition-all active:scale-95 ${
-                            post.isLiked 
-                              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/30 animate-bounce-click' 
-                              : 'bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 border border-pink-500/30'
-                          }`}
-                        >
-                          <span className="material-icons text-sm">{post.isLiked ? 'favorite' : 'favorite_border'}</span>
-                          <span>助かった！ {post.thanks}</span>
-                        </button>
-                      </div>
+                      <span className="text-slate-400 text-[9px] flex-shrink-0">{post.time}</span>
                     </div>
-                  ))
-                )}
+
+                    <h2 className="font-black text-white text-xs sm:text-sm mb-1.5 leading-snug group-hover:text-emerald-300 transition-colors break-words">
+                      {post.title}
+                    </h2>
+
+                    <p className="text-[11px] text-slate-300 mb-2.5 line-clamp-2 leading-relaxed break-words">
+                      {post.content}
+                    </p>
+
+                    {post.image && (
+                      <div className="mb-2.5 rounded-xl overflow-hidden max-h-40 bg-slate-900 border border-slate-700 w-full">
+                        <img src={post.image} alt="投稿写真" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    {/* リアクション＆カウンター */}
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-700/60 text-xs">
+                      <div className="flex gap-2.5 text-slate-400 text-[10px]">
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-icons text-xs">visibility</span> {post.views}
+                        </span>
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-icons text-xs">chat_bubble_outline</span> {post.commentsCount}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={(e) => handleThanks(e, post.id)}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-full font-black text-[11px] transition-all active:scale-95 ${
+                          post.isLiked 
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md animate-bounce-click' 
+                            : 'bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 border border-pink-500/30'
+                        }`}
+                      >
+                        <span className="material-icons text-xs">{post.isLiked ? 'favorite' : 'favorite_border'}</span>
+                        <span>助かった！ {post.thanks}</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* TABS 1: パシャ投稿（OCRカメラ） */}
+            {/* TAB 1: パシャ投稿 */}
             {currentTab === 1 && (
-              <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
-                <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 flex items-center justify-center mx-auto mb-2">
-                  <span className="material-icons text-3xl">photo_camera</span>
+              <div className="bg-slate-800/90 p-4 rounded-2xl border border-slate-700 text-center space-y-3 w-full">
+                <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 flex items-center justify-center mx-auto mb-1">
+                  <span className="material-icons text-2xl">photo_camera</span>
                 </div>
-                <h2 className="font-black text-white text-base">パシャっと撮影・OCR自動解析</h2>
-                <p className="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                <h2 className="font-black text-white text-sm">パシャっと撮影・OCR自動解析</h2>
+                <p className="text-[11px] text-slate-300 leading-relaxed max-w-xs mx-auto">
                   キャンパス内の掲示板や休講案内、講義ノートを撮影するだけ！自動でテキスト化・タグ付けされます。
                 </p>
 
                 <div 
                   onClick={handleCreatePost}
-                  className="border-2 border-dashed border-emerald-500/30 rounded-2xl p-6 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors flex flex-col items-center justify-center cursor-pointer my-4"
+                  className="border-2 border-dashed border-emerald-500/30 rounded-2xl p-5 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors flex flex-col items-center justify-center cursor-pointer my-3"
                 >
-                  <span className="material-icons text-emerald-400 text-4xl mb-2">cloud_upload</span>
-                  <span className="text-xs font-bold text-emerald-300">写真を選択 または カメラで撮影</span>
-                  <span className="text-[10px] text-slate-400 mt-1">JPEG, PNG 対応・AI解析</span>
+                  <span className="material-icons text-emerald-400 text-3xl mb-1">cloud_upload</span>
+                  <span className="text-xs font-bold text-emerald-300">写真を選択 または カメラ撮影</span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">JPEG, PNG 対応・AI解析</span>
                 </div>
 
                 <button 
                   onClick={handleCreatePost}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black py-3 rounded-xl shadow-lg hover:opacity-95 text-xs"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black py-2.5 rounded-xl shadow-lg hover:opacity-95 text-xs"
                 >
                   みんなに共有する（+10サンクス獲得）
                 </button>
               </div>
             )}
 
+            {/* TAB 2: 貢献・マイ（グラフィック重視・SNSシェア対応型） */}
             {currentTab === 2 && (
-              <div className="space-y-3">
-                {/* ユーザープロフィール＆貢献インパクトカード */}
-                <div className="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-5 rounded-2xl shadow-xl border border-emerald-500/30 relative overflow-hidden">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 text-slate-950 font-black flex items-center justify-center text-base shadow-md">
+              <div className="space-y-3 w-full">
+                <div className="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-4 rounded-2xl shadow-xl border border-emerald-500/30 relative overflow-hidden w-full">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-xs shadow-md flex-shrink-0">
                         {userGrade}年
                       </div>
-                      <div>
-                        <h2 className="font-black text-base leading-tight">北大 太郎（あなた）</h2>
-                        <span className="inline-block bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 mt-1">
+                      <div className="min-w-0">
+                        <h2 className="font-black text-xs sm:text-sm leading-tight truncate">北大 太郎（あなた）</h2>
+                        <span className="inline-block bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-500/30 mt-0.5 truncate">
                           🏆 キャンパスの灯火（Lv.4）
                         </span>
                       </div>
                     </div>
-                    <span className="bg-slate-800 text-slate-300 text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-700">
+                    <span className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-700 flex-shrink-0">
                       経済学部
                     </span>
                   </div>
 
-                  {/* レベルアップ進捗ゲージ */}
-                  <div className="bg-slate-950/60 rounded-xl p-3 mb-3 border border-white/5">
-                    <div className="flex justify-between text-xs mb-1.5 font-bold">
-                      <span className="text-amber-300">次ランク：単位の救世主 (Lv.5)</span>
-                      <span className="text-slate-300">{userThanks} / 150 pt</span>
+                  {/* 4グリッド Bento Card */}
+                  <div className="grid grid-cols-4 gap-1.5 text-center pt-1 w-full">
+                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
+                      <span className="text-slate-400 text-[8px] block">閲覧数</span>
+                      <span className="font-black text-white text-[11px]">1,420<span className="text-[8px] font-normal">PV</span></span>
                     </div>
-                    <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${Math.min(100, (userThanks / 150) * 100)}%` }}
-                      />
+                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
+                      <span className="text-slate-400 text-[8px] block">サンクス</span>
+                      <span className="font-black text-amber-300 text-[11px]">{userThanks}<span className="text-[8px] font-normal">pt</span></span>
                     </div>
-                  </div>
-
-                  {/* インパクト統計 4グリッド Bento Card */}
-                  <div className="grid grid-cols-4 gap-2 text-center pt-1">
-                    <div className="bg-slate-800/80 rounded-xl p-2 border border-slate-700/60">
-                      <span className="text-slate-400 text-[9px] block mb-1">情報閲覧数</span>
-                      <span className="font-black text-white text-xs">1,420 <span className="text-[9px] font-normal">PV</span></span>
+                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
+                      <span className="text-slate-400 text-[8px] block">支援人数</span>
+                      <span className="font-black text-emerald-300 text-[11px]">128<span className="text-[8px] font-normal">人</span></span>
                     </div>
-                    <div className="bg-slate-800/80 rounded-xl p-2 border border-slate-700/60">
-                      <span className="text-slate-400 text-[9px] block mb-1">獲得サンクス</span>
-                      <span className="font-black text-amber-300 text-xs">{userThanks} <span className="text-[9px] font-normal">pt</span></span>
-                    </div>
-                    <div className="bg-slate-800/80 rounded-xl p-2 border border-slate-700/60">
-                      <span className="text-slate-400 text-[9px] block mb-1">推定支援人数</span>
-                      <span className="font-black text-emerald-300 text-xs">128 <span className="text-[9px] font-normal">人</span></span>
-                    </div>
-                    <div className="bg-slate-800/80 rounded-xl p-2 border border-slate-700/60">
-                      <span className="text-slate-400 text-[9px] block mb-1">学部ランク</span>
-                      <span className="font-black text-pink-300 text-xs">Top 3<span className="text-[9px] font-normal">%</span></span>
+                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
+                      <span className="text-slate-400 text-[8px] block">学部ランク</span>
+                      <span className="font-black text-pink-300 text-[11px]">Top 3<span className="text-[8px] font-normal">%</span></span>
                     </div>
                   </div>
                 </div>
 
-                {/* 投稿別アナリティクス */}
-                <div>
-                  <h3 className="font-extrabold text-slate-200 text-xs mb-2 flex items-center gap-1">
-                    <span className="material-icons text-emerald-400 text-sm">analytics</span>
-                    あなたが提供した情報の反響（投稿別インパクト）
-                  </h3>
-
-                  <div className="space-y-2">
-                    <div className="bg-slate-800/90 p-3.5 rounded-2xl border border-slate-700 shadow-sm">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-bold">授業・過去問</span>
-                        <span className="text-slate-400 text-[10px]">3日前に投稿</span>
-                      </div>
-                      <h4 className="font-extrabold text-xs text-white mb-2">【マクロ経済学Ⅰ】期末テスト出題傾向＆過去問ノート</h4>
-
-                      <div className="bg-slate-900/80 rounded-xl p-2 flex justify-around text-center border border-slate-800 text-xs">
-                        <div>
-                          <span className="text-slate-400 text-[10px] block">閲覧数</span>
-                          <span className="font-extrabold text-slate-200">840 回</span>
-                        </div>
-                        <div className="w-px bg-slate-800 h-6 my-auto" />
-                        <div>
-                          <span className="text-slate-400 text-[10px] block">助かった！</span>
-                          <span className="font-extrabold text-pink-400">💖 {userThanks} 人</span>
-                        </div>
-                        <div className="w-px bg-slate-800 h-6 my-auto" />
-                        <div>
-                          <span className="text-slate-400 text-[10px] block">コメント</span>
-                          <span className="font-extrabold text-emerald-400">12 件</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-2.5 bg-pink-500/10 p-2.5 rounded-xl border border-pink-500/20 flex items-center gap-2">
-                        <span className="material-icons text-pink-400 text-sm">chat</span>
-                        <p className="text-xs text-pink-200 italic font-medium leading-tight">
-                          「このノートのおかげで過去問問3解けました！神です泣」— 経済1年
-                        </p>
-                      </div>
+                {/* 🌟 SNSシェア風 スタイリッシュ貢献グラフィックカードへの導線 */}
+                <div className="bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-indigo-950/80 p-3.5 rounded-2xl border border-emerald-500/40 flex items-center justify-between gap-2.5 w-full shadow-lg relative overflow-hidden group">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      <span className="material-icons text-emerald-400 text-sm">auto_awesome</span>
+                      <span className="font-black text-xs text-emerald-300 tracking-tight">キャンパス貢献ハイライトカード</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* 届いた感謝アクティビティ */}
-                <div>
-                  <h3 className="font-extrabold text-slate-200 text-xs mb-2 flex items-center gap-1">
-                    <span className="material-icons text-pink-400 text-sm">favorite</span>
-                    直近で届いた感謝・サンクスアクティビティ
-                  </h3>
-
-                  <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700 space-y-2 text-xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] flex items-center justify-center font-bold">1年</span>
-                        <span className="text-slate-200 font-bold">総合理系1年生からサンクスが届きました</span>
-                      </div>
-                      <span className="text-slate-400 text-[10px]">10分前</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 text-[10px] flex items-center justify-center font-bold">2年</span>
-                        <span className="text-slate-200 font-bold">経済学部2年生がコメントしました</span>
-                      </div>
-                      <span className="text-slate-400 text-[10px]">1時間前</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ガクチカ証明レポート発行 */}
-                <div className="bg-amber-400/10 p-4 rounded-2xl border border-amber-400/30 flex items-start gap-3">
-                  <span className="material-icons text-amber-400 text-2xl">verified</span>
-                  <div>
-                    <h4 className="font-black text-xs text-amber-300">利他行動・ガクチカ証明レポート</h4>
-                    <p className="text-[11px] text-slate-300 mb-2.5 leading-snug">
-                      あなたが学内に貢献した『無償情報提供実績（1,420PV / {userThanks}サンクス）』を就活の自己PR用証明データとして出力可能です。
+                    <p className="text-[10px] text-slate-300 leading-snug">
+                      あなたの【1,420PV / {userThanks}サンクス】の貢献成果を、映えるグラフィックカードで確認・SNS共有できます。
                     </p>
-                    <button 
-                      onClick={() => setOpenReportModal(true)}
-                      className="bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-1.5 rounded-xl shadow hover:bg-amber-300"
-                    >
-                      証明レポートを発行・閲覧
-                    </button>
                   </div>
+                  <button 
+                    onClick={() => setOpenReportModal(true)}
+                    className="bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 text-[11px] font-black px-3 py-2 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1 flex-shrink-0"
+                  >
+                    <span className="material-icons text-sm">ios_share</span>
+                    <span>カード生成</span>
+                  </button>
                 </div>
-
               </div>
             )}
 
-            {/* TABS 3: プレミアム機能（500円課金） */}
+            {/* TAB 3: プレミアム */}
             {currentTab === 3 && (
-              <div className="bg-slate-800/90 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
-                <span className="material-icons text-amber-400 text-4xl">workspace_premium</span>
-                <h2 className="font-black text-white text-base">プレミアムパス（月額 500円）</h2>
-                <p className="text-xs text-slate-300 leading-relaxed">
+              <div className="bg-slate-800/90 p-4 rounded-2xl border border-slate-700 text-center space-y-3 w-full">
+                <span className="material-icons text-amber-400 text-3xl">workspace_premium</span>
+                <h2 className="font-black text-white text-sm">プレミアムパス（月額 500円）</h2>
+                <p className="text-[11px] text-slate-300 leading-relaxed max-w-xs mx-auto">
                   過去5年分の過去問アーカイブ閲覧無制限 ＆ 広告完全非表示
                 </p>
 
-                <div className="space-y-2 text-left text-xs my-4">
-                  <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-700 flex items-center gap-2">
-                    <span className="material-icons text-emerald-400 text-base">check_circle</span>
-                    <span className="font-bold text-slate-200">過去問・期末対策ノートの全ダウンロード権</span>
-                  </div>
-                  <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-700 flex items-center gap-2">
-                    <span className="material-icons text-emerald-400 text-base">check_circle</span>
-                    <span className="font-bold text-slate-200">快適な広告フリー体験</span>
-                  </div>
-                </div>
-
                 <button 
                   onClick={() => showToast("🔒 登録手続きへ進みます（デモ）")}
-                  className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black py-3 rounded-xl shadow-lg hover:opacity-95 text-xs"
+                  className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black py-2.5 rounded-xl shadow-lg hover:opacity-95 text-xs"
                 >
                   月額500円で登録する
                 </button>
@@ -766,121 +655,116 @@
           {/* 浮動投稿ボタン (FAB) */}
           <button 
             onClick={() => setOpenNewPostModal(true)}
-            className="fixed bottom-20 right-4 bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 p-3.5 rounded-full shadow-2xl flex items-center gap-1 hover:scale-105 active:scale-95 transition-all z-20 font-black"
+            className="fixed bottom-16 right-3 bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 p-3 rounded-full shadow-2xl flex items-center gap-1 hover:scale-105 active:scale-95 transition-all z-20 font-black"
           >
-            <span className="material-icons">add</span>
-            <span className="text-xs pr-1">投稿する</span>
+            <span className="material-icons text-lg">add</span>
+            <span className="text-[11px] pr-0.5">投稿</span>
           </button>
 
           {/* ボトムナビゲーション */}
-          <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around p-2 z-30">
+          <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around p-1.5 z-30 w-full">
             <button 
               onClick={() => setCurrentTab(0)}
               className={`flex flex-col items-center gap-0.5 ${currentTab === 0 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}
             >
-              <span className="material-icons text-xl">dynamic_feed</span>
-              <span className="text-[10px]">フィード</span>
+              <span className="material-icons text-lg">dynamic_feed</span>
+              <span className="text-[9px]">フィード</span>
             </button>
             <button 
               onClick={() => setCurrentTab(1)}
               className={`flex flex-col items-center gap-0.5 ${currentTab === 1 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}
             >
-              <span className="material-icons text-xl">camera_alt</span>
-              <span className="text-[10px]">パシャ投稿</span>
+              <span className="material-icons text-lg">camera_alt</span>
+              <span className="text-[9px]">パシャ投稿</span>
             </button>
             <button 
               onClick={() => setCurrentTab(2)}
               className={`flex flex-col items-center gap-0.5 ${currentTab === 2 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}
             >
-              <span className="material-icons text-xl">stars</span>
-              <span className="text-[10px]">貢献・マイ</span>
+              <span className="material-icons text-lg">stars</span>
+              <span className="text-[9px]">貢献・マイ</span>
             </button>
             <button 
               onClick={() => setCurrentTab(3)}
               className={`flex flex-col items-center gap-0.5 ${currentTab === 3 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}
             >
-              <span className="material-icons text-xl">workspace_premium</span>
-              <span className="text-[10px]">プレミアム</span>
+              <span className="material-icons text-lg">workspace_premium</span>
+              <span className="text-[9px]">プレミアム</span>
             </button>
           </nav>
 
-          {/* フローティングハート演出オーバーレイ */}
+          {/* フローティングハート */}
           {floatingHearts.map(h => (
             <div 
               key={h.id} 
               style={{ left: h.x, top: h.y }}
-              className="fixed pointer-events-none z-50 text-pink-400 flex items-center font-black text-sm animate-float-heart"
+              className="fixed pointer-events-none z-50 text-pink-400 flex items-center font-black text-xs animate-float-heart"
             >
-              <span className="material-icons">favorite</span>
+              <span className="material-icons text-sm">favorite</span>
               <span>+1 Thank!</span>
             </div>
           ))}
 
           {/* トースト表示 */}
           {toastMessage && (
-            <div className="fixed top-16 left-1/2 -translate-x-1/2 bg-emerald-400 text-slate-950 text-xs px-4 py-2.5 rounded-full shadow-2xl z-50 animate-fade-in font-black border border-white/20">
+            <div className="fixed top-14 left-1/2 -translate-x-1/2 bg-emerald-400 text-slate-950 text-[11px] px-3.5 py-2 rounded-full shadow-2xl z-50 animate-fade-in font-black border border-white/20 whitespace-nowrap">
               {toastMessage}
             </div>
           )}
 
-          {}
-          {/* 投稿詳細・コメントモーダル */}
+          {/* 投稿詳細モーダル */}
           {selectedPost && (
-            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
+            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-3 backdrop-blur-sm">
               <div className="bg-slate-900 w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col overflow-hidden animate-slide-up border border-slate-700">
-                <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">
+                <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">
                       {selectedPost.category}
                     </span>
-                    <span className="text-xs font-bold text-slate-300">{selectedPost.author}</span>
+                    <span className="text-xs font-bold text-slate-300 truncate">{selectedPost.author}</span>
                   </div>
                   <button onClick={() => setSelectedPost(null)} className="text-slate-400 hover:text-white">
-                    <span className="material-icons">close</span>
+                    <span className="material-icons text-lg">close</span>
                   </button>
                 </div>
 
-                <div className="p-4 overflow-y-auto space-y-3 flex-1 text-xs">
-                  <h2 className="font-black text-white text-base leading-snug">{selectedPost.title}</h2>
-                  <p className="text-slate-300 leading-relaxed">{selectedPost.content}</p>
+                <div className="p-3.5 overflow-y-auto space-y-2.5 flex-1 text-xs break-words">
+                  <h2 className="font-black text-white text-sm leading-snug break-words">{selectedPost.title}</h2>
+                  <p className="text-slate-300 text-[11px] leading-relaxed break-words">{selectedPost.content}</p>
                   
                   {selectedPost.image && (
-                    <img src={selectedPost.image} alt="添付写真" className="rounded-xl w-full object-cover max-h-60 border border-slate-700" />
+                    <img src={selectedPost.image} alt="添付写真" className="rounded-xl w-full object-cover max-h-52 border border-slate-700" />
                   )}
 
-                  {/* コメントセクション */}
-                  <div className="pt-3 border-t border-slate-800">
-                    <h3 className="font-extrabold text-slate-200 mb-2">コメント ({selectedPost.commentsCount}件)</h3>
-                    <div className="space-y-2 mb-3">
-                      {selectedPost.comments.length === 0 ? (
-                        <p className="text-slate-500 text-center py-2">コメントはまだありません</p>
-                      ) : (
-                        selectedPost.comments.map(c => (
-                          <div key={c.id} className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
-                            <div className="flex justify-between font-bold text-slate-300 text-[11px] mb-1">
-                              <span>{c.user}</span>
-                              <span className="text-slate-500 font-normal">{c.time}</span>
-                            </div>
-                            <p className="text-slate-200">{c.text}</p>
+                  {/* コメント一覧 */}
+                  <div className="pt-2 border-t border-slate-800">
+                    <h3 className="font-extrabold text-slate-200 mb-1.5 text-xs">コメント ({selectedPost.commentsCount}件)</h3>
+                    <div className="space-y-1.5 mb-2">
+                      {selectedPost.comments.map(c => (
+                        <div key={c.id} className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-[11px]">
+                          <div className="flex justify-between font-bold text-slate-300 mb-0.5">
+                            <span>{c.user}</span>
+                            <span className="text-slate-500 font-normal text-[9px]">{c.time}</span>
                           </div>
-                        ))
-                      )}
+                          <p className="text-slate-200">{c.text}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                {/* コメント入力エリア */}
-                <div className="p-3 border-t border-slate-800 bg-slate-900 flex gap-2">
+                {/* コメント入力 */}
+                <div className="p-2.5 border-t border-slate-800 bg-slate-900 flex gap-1.5">
                   <input 
                     type="text" 
                     placeholder="コメントを入力..." 
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                   />
                   <button 
                     onClick={() => handleAddComment(selectedPost.id)}
-                    className="bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs hover:bg-emerald-400"
+                    className="bg-emerald-500 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs hover:bg-emerald-400 flex-shrink-0"
                   >
                     送信
                   </button>
@@ -891,56 +775,55 @@
 
           {/* 新規投稿モーダル */}
           {openNewPostModal && (
-            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-              <div className="bg-slate-900 w-full max-w-md rounded-2xl p-5 space-y-4 border border-slate-700">
+            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-3 backdrop-blur-sm">
+              <div className="bg-slate-900 w-full max-w-md rounded-2xl p-4 space-y-3 border border-slate-700">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                  <h3 className="font-black text-white text-sm">キャンパス情報を新規投稿</h3>
+                  <h3 className="font-black text-white text-xs sm:text-sm">キャンパス情報を新規投稿</h3>
                   <button onClick={() => setOpenNewPostModal(false)} className="text-slate-400 hover:text-white">
-                    <span className="material-icons">close</span>
+                    <span className="material-icons text-lg">close</span>
                   </button>
                 </div>
 
-                <div className="space-y-3 text-xs">
+                <div className="space-y-2.5 text-xs">
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">カテゴリー</label>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">カテゴリー</label>
                     <select 
                       value={newCategory} 
                       onChange={(e) => setNewCategory(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2.5 text-xs font-bold"
+                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2 text-xs font-bold"
                     >
                       <option value="授業・過去問">授業・過去問</option>
                       <option value="休講・掲示板">休講・掲示板</option>
                       <option value="グルメ・学食">グルメ・学食</option>
-                      <option value="サークル・イベント">サークル・イベント</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">タイトル</label>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">タイトル</label>
                     <input 
                       type="text" 
                       placeholder="例：【マクロ経済学】講義ノート" 
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">本文・詳細情報</label>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">詳細情報</label>
                     <textarea 
                       rows="3" 
                       placeholder="後輩や同僚に伝えたい情報を入力..." 
                       value={newContent}
                       onChange={(e) => setNewContent(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   </div>
                 </div>
 
                 <button 
                   onClick={handleCreatePost}
-                  className="w-full bg-emerald-500 text-slate-950 font-black py-3 rounded-xl shadow-md text-xs hover:bg-emerald-400"
+                  className="w-full bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl shadow-md text-xs hover:bg-emerald-400"
                 >
                   投稿を完了して+10サンクスGET
                 </button>
@@ -948,39 +831,98 @@
             </div>
           )}
 
-          {/* ガクチカ証明レポートモーダル */}
+          {/* 🌟【SNSシェア対応型】ビジュアル貢献ハイライト・グラフィックモーダル */}
           {openReportModal && (
-            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-              <div className="bg-slate-900 w-full max-w-md rounded-2xl p-5 space-y-4 border border-slate-700">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                  <h3 className="font-black text-amber-300 text-sm flex items-center gap-1">
-                    <span className="material-icons text-amber-400">verified</span> 利他行動・ガクチカ証明書
-                  </h3>
-                  <button onClick={() => setOpenReportModal(false)} className="text-slate-400 hover:text-white">
-                    <span className="material-icons">close</span>
+            <div className="fixed inset-0 bg-slate-950/85 z-50 flex items-center justify-center p-3 backdrop-blur-md">
+              <div className="w-full max-w-sm space-y-3 animate-slide-up">
+                
+                {/* 閉じるボタン */}
+                <div className="flex justify-end">
+                  <button onClick={() => setOpenReportModal(false)} className="text-slate-400 hover:text-white bg-slate-800/80 p-1.5 rounded-full">
+                    <span className="material-icons text-lg">close</span>
                   </button>
                 </div>
 
-                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-xs space-y-2">
-                  <div className="flex justify-between"><span className="text-slate-400">氏名:</span><span className="font-bold text-white">北大 太郎</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">所属:</span><span className="font-bold text-white">経済学部 3年</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">無償情報提供回数:</span><span className="font-bold text-emerald-400">14 回</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">総閲覧影響数:</span><span className="font-bold text-emerald-400">1,420 PV</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">獲得感謝（サンクス）:</span><span className="font-bold text-pink-400">{userThanks} pt</span></div>
-                  <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 leading-snug">
-                    ※ 本レポートは、学内ポータルでの無償貢献活動実績を認証・証明するデータです。就職活動の自己PR資料として添付可能です。
+                {/* 🎨【映えるSNSカード本体】（Instagram Stories / X 共有サイズ対応） */}
+                <div className="hologram-card rounded-3xl p-5 relative overflow-hidden shadow-2xl border border-emerald-400/30 text-white space-y-4">
+                  
+                  {/* アニメーション光沢オーバーレイ */}
+                  <div className="absolute inset-0 shimmer-bg pointer-events-none"></div>
+
+                  {/* カードヘッダー */}
+                  <div className="flex justify-between items-start border-b border-white/10 pb-3 relative z-10">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-400 to-teal-300 text-slate-950 flex items-center justify-center font-black text-xs shadow-lg">
+                        北大
+                      </div>
+                      <div>
+                        <h3 className="font-black text-xs text-white leading-tight">キャンパス IMPACT REPORT</h3>
+                        <span className="text-[9px] text-emerald-300/80 block font-medium">2026 Academic Year</span>
+                      </div>
+                    </div>
+                    <span className="bg-emerald-400/20 text-emerald-300 text-[8px] font-black px-2 py-0.5 rounded-full border border-emerald-400/40 uppercase tracking-widest">
+                      Official Badge
+                    </span>
                   </div>
+
+                  {/* ユーザーアバター＆メイン数字 */}
+                  <div className="text-center space-y-1 relative z-10 py-1">
+                    <span className="text-[10px] text-emerald-300 font-bold tracking-wider uppercase block">Total Contribution Impact</span>
+                    <div className="font-black text-4xl text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300 tracking-tight">
+                      {userThanks} <span className="text-sm text-amber-300 font-normal">Thanks</span>
+                    </div>
+                    <div className="text-[10px] text-slate-300 font-bold flex items-center justify-center gap-1">
+                      <span>北大 太郎</span>
+                      <span className="text-slate-500">•</span>
+                      <span>経済学部 3年</span>
+                    </div>
+                  </div>
+
+                  {/* メトリクス Bento 2x2 */}
+                  <div className="grid grid-cols-2 gap-2 relative z-10 text-center">
+                    <div className="bg-slate-900/60 backdrop-blur-md p-2.5 rounded-2xl border border-white/10">
+                      <span className="text-[9px] text-slate-400 block font-semibold mb-0.5">総閲覧インプレッション</span>
+                      <span className="font-black text-base text-white">1,420 <span className="text-[9px] text-slate-400 font-normal">PV</span></span>
+                    </div>
+                    <div className="bg-slate-900/60 backdrop-blur-md p-2.5 rounded-2xl border border-white/10">
+                      <span className="text-[9px] text-slate-400 block font-semibold mb-0.5">学内貢献ランキング</span>
+                      <span className="font-black text-base text-emerald-300">Top 3<span className="text-[9px] font-normal">%</span></span>
+                    </div>
+                  </div>
+
+                  {/* 代表的なフィードバック（コメントピックアップ） */}
+                  <div className="bg-emerald-950/50 backdrop-blur-md p-2.5 rounded-2xl border border-emerald-500/30 text-[10px] relative z-10 space-y-1">
+                    <span className="text-[8px] font-black text-emerald-400 uppercase tracking-wider block">学内ユーザーからの最新ハイライト</span>
+                    <p className="text-slate-200 italic leading-snug">
+                      「このノートのおかげで過去問問3解けました！神です泣」
+                    </p>
+                  </div>
+
+                  {/* フッターウォーターマーク */}
+                  <div className="pt-2 border-t border-white/10 flex justify-between items-center text-[8px] text-slate-400 relative z-10 font-mono">
+                    <span>#北大キャンパスリアルポータル</span>
+                    <span className="text-emerald-400 font-bold">VERIFIED MEMBER</span>
+                  </div>
+
                 </div>
 
-                <button 
-                  onClick={() => {
-                    showToast("📄 証明書PDFを出力しました（デモ）");
-                    setOpenReportModal(false);
-                  }}
-                  className="w-full bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl shadow text-xs hover:bg-amber-300"
-                >
-                  PDFとして保存・出力
-                </button>
+                {/* アクションボタン */}
+                <div className="space-y-2 pt-1">
+                  <button 
+                    onClick={() => {
+                      showToast("📸 カード画像（Instagramストーリーズ用）をコピーしました！");
+                      setOpenReportModal(false);
+                    }}
+                    className="w-full bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 font-black py-2.5 rounded-2xl shadow-xl hover:opacity-95 text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-icons text-sm">content_copy</span>
+                    <span>SNS用カード画像を保存・シェア</span>
+                  </button>
+                  <p className="text-[9px] text-slate-400 text-center font-medium">
+                    ※個人情報は含まれず、学内実績データのみが画像化されます
+                  </p>
+                </div>
+
               </div>
             </div>
           )}
