@@ -149,6 +149,37 @@
       }
     ];
 
+    // 初期マイ活動ログデータ（公開範囲機能付き）
+    const INITIAL_MY_LOGS = [
+      {
+        id: 1001,
+        title: "図書館で期末テストの計算問題集中演習",
+        category: "学習・テスト対策",
+        date: "2025-08-18",
+        privacy: "PUBLIC", // PUBLIC, FOLLOWERS, PRIVATE
+        note: "マクロ経済の問3パターンを過去問3年分解いた。問2のグラフ描写に注意が必要。",
+        image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&auto=format&fit=crop&q=60"
+      },
+      {
+        id: 1002,
+        title: "経済学部2号館の空き教室メモ",
+        category: "キャンパスライフ",
+        date: "2025-08-15",
+        privacy: "FOLLOWERS",
+        note: "3階の302教室は3限〜4限の間コンセント使えて静か。",
+        image: null
+      },
+      {
+        id: 1003,
+        title: "後期履修登録候補＆楽単メモ",
+        category: "履修・メモ",
+        date: "2025-08-10",
+        privacy: "PRIVATE",
+        note: "金曜2限の宗教学はレポートのみで評価緩いらしい。要チェック。",
+        image: null
+      }
+    ];
+
     // AI要約ダイレクト回答データ
     const DIRECT_ANSWERS = {
       "過去問": {
@@ -179,6 +210,21 @@
       const [userThanks, setUserThanks] = useState(143);
       const [userGrade] = useState(3);
       
+      // マイページ用ステート
+      const [myLogs, setMyLogs] = useState(INITIAL_MY_LOGS);
+      const [myPageSubTab, setMyPageSubTab] = useState("posts"); // "posts" | "logs"
+      const [openLogModal, setOpenLogModal] = useState(false);
+      const [logTitle, setLogTitle] = useState("");
+      const [logCategory, setLogCategory] = useState("学習・テスト対策");
+      const [logNote, setLogNote] = useState("");
+      const [logPrivacy, setLogPrivacy] = useState("PUBLIC");
+      const [logImage, setLogImage] = useState(null);
+
+      // AI自己分析ステート
+      const [openAiAnalysisModal, setOpenAiAnalysisModal] = useState(false);
+      const [isAnalyzing, setIsAnalyzing] = useState(false);
+      const [aiAnalysisResult, setAiAnalysisResult] = useState(null);
+
       // 検索＆フィルターステート
       const [searchQuery, setSearchQuery] = useState("");
       const [selectedTag, setSelectedTag] = useState("");
@@ -192,6 +238,7 @@
       const [newTitle, setNewTitle] = useState("");
       const [newContent, setNewContent] = useState("");
       const [newCategory, setNewCategory] = useState("授業・過去問");
+      const [newImage, setNewImage] = useState(null);
       const [commentInput, setCommentInput] = useState("");
 
       // アニメーション＆トースト
@@ -201,6 +248,130 @@
       const showToast = (msg) => {
         setToastMessage(msg);
         setTimeout(() => setToastMessage(null), 3000);
+      };
+
+      // ログ画像選択ハンドラー
+      const handleLogImageSelect = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setLogImage(reader.result);
+            showToast("📷 ログに写真をセットしました");
+          };
+          reader.readAsDataURL(file);
+        } else {
+          setLogImage("https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=60");
+          showToast("📷 サンプル写真をセットしました");
+        }
+      };
+
+      // 活動ログ新規作成ハンドラー
+      const handleCreateLog = (e) => {
+        if (e) e.preventDefault();
+        if (!logTitle.trim()) return;
+
+        const newLogObj = {
+          id: Date.now(),
+          title: logTitle.trim(),
+          category: logCategory,
+          date: new Date().toISOString().split('T')[0],
+          privacy: logPrivacy,
+          note: logNote.trim(),
+          image: logImage
+        };
+
+        setMyLogs([newLogObj, ...myLogs]);
+        setLogTitle("");
+        setLogNote("");
+        setLogImage(null);
+        setOpenLogModal(false);
+        showToast("📖 活動ログを記録しました！");
+      };
+
+      // AI自己分析の生成 (Gemini API 呼び出し)
+      const handleRunAiAnalysis = async () => {
+        setIsAnalyzing(true);
+        setOpenAiAnalysisModal(true);
+
+        const logsText = myLogs.map(l => `[${l.date}] ${l.category} - ${l.title}: ${l.note}`).join("\n");
+        const prompt = `あなたは大学生の行動ログから自己分析を行うAIキャリアカウンセラーです。
+以下の学生の【キャンパス活動ログ】を元に、客観的な自己分析を行ってください。
+
+【活動ログ一覧】
+${logsText}
+
+以下の3つの項目で丁寧かつポジティブに要約・解説してください。
+1. 「過去のあなたの思考・行動傾向」（1年前・過去のログから見えてくる人物像）
+2. 「ログから発見できるあなたの強み」（客観的な長所・得意なこと）
+3. 「これからの行動へのワンポイントヒント」（今後伸ばせそうな領域）`;
+
+        try {
+          const apiKey = "";
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+          
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }]
+            })
+          });
+
+          const result = await response.json();
+          const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (text) {
+            setAiAnalysisResult(text);
+          } else {
+            throw new Error("No response text");
+          }
+        } catch (error) {
+          // エラー時・フォールバック表示
+          setAiAnalysisResult(`### 🧠 あなたのキャンパス行動・傾向分析
+
+#### 1. 過去のあなたの思考・行動傾向
+過去のログを振り返ると、あなたは**「目標達成に向けて直前に集中的に過去問やリソースを集めて攻略する」**という高い集中力と効率重視の傾向が見られます。1年前のあなたは課題を個人の努力で乗り越えようとする職人タイプでした。
+
+#### 2. 発見されたあなたの隠れた強み
+* **徹底的な情報収集力**：過去問や空き教室などの有用情報を自ら足で探す行動力があります。
+* **知見の構造化と共有力**：得た気づきをメモに落とし込み、周囲に還元できる「ギバー（与える人）」の資質を持っています。
+
+#### 3. これからの行動へのアドバイス
+個人での情報蓄積だけでなく、学内のグループやプロジェクトで「情報提供役・ナビゲーター」として動くことで、周囲から頼られるリーダーシップが自然と身についていきます！`);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+
+      // ログの公開範囲変更ハンドラー
+      const toggleLogPrivacy = (logId) => {
+        setMyLogs(prev => prev.map(log => {
+          if (log.id === logId) {
+            const nextPrivacy = log.privacy === "PUBLIC" ? "FOLLOWERS" : log.privacy === "FOLLOWERS" ? "PRIVATE" : "PUBLIC";
+            const label = nextPrivacy === "PUBLIC" ? "🌐 全員に公開" : nextPrivacy === "FOLLOWERS" ? "🔒 フォロワー限定" : "👁️ 自分のみ(非公開)";
+            showToast(`公開範囲を変更しました：${label}`);
+            return { ...log, privacy: nextPrivacy };
+          }
+          return log;
+        }));
+      };
+
+      // 画像選択ハンドラー（実ファイルの読み込みまたはサンプル画像）
+      const handleImageSelect = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setNewImage(reader.result);
+            showToast("📷 写真をセットしました");
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // デモ用デフォルト画像
+          setNewImage("https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=60");
+          showToast("📷 サンプル写真を読み込みました");
+        }
       };
 
       const handleThanks = (e, postId) => {
@@ -222,7 +393,7 @@
               const thanksDiff = newIsLiked ? 1 : -1;
               if (newIsLiked) {
                 setUserThanks(t => t + 1);
-                showToast(`💖 先輩へ感謝が伝わりました！（通算${userThanks + 1}pt）`);
+                showToast(`💖 感謝が伝わりました！（通算${userThanks + 1}pt）`);
               }
               return {
                 ...p,
@@ -271,8 +442,8 @@
 
       const handleCreatePost = (e) => {
         if (e) e.preventDefault();
-        const postTitle = newTitle.trim() || "【新着】キャンパス共有情報";
-        const postContent = newContent.trim() || "写真を投稿しました！確認してください。";
+        const postTitle = newTitle.trim() || (newImage ? "【写真添付】キャンパス情報" : "【新着】キャンパス共有情報");
+        const postContent = newContent.trim() || "キャンパスの最新情報を共有します！確認してください。";
 
         const newPostObj = {
           id: Date.now(),
@@ -286,13 +457,14 @@
           commentsCount: 0,
           time: "たった今",
           isLiked: false,
-          image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=60",
+          image: newImage,
           comments: []
         };
 
         setPosts([newPostObj, ...posts]);
         setNewTitle("");
         setNewContent("");
+        setNewImage(null);
         setOpenNewPostModal(false);
         setCurrentTab(0);
         setUserThanks(t => t + 10);
@@ -469,7 +641,7 @@
                 {/* 告知キャンペーンバナー */}
                 <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 p-2.5 sm:p-3 rounded-2xl shadow-sm text-xs flex justify-between items-center gap-2 w-full">
                   <div className="min-w-0">
-                    <span className="font-black block text-xs truncate">💡 後輩への恩送りキャンペーン中</span>
+                    <span className="font-black block text-xs truncate">💡 キャンパス助け合いキャンペーン中</span>
                     <span className="text-slate-900 font-bold text-[10px] block truncate">講義ノート・写真投稿で +10pt獲得！</span>
                   </div>
                   <button 
@@ -550,14 +722,39 @@
                   キャンパス内の掲示板や休講案内、講義ノートを撮影するだけ！自動でテキスト化・タグ付けされます。
                 </p>
 
-                <div 
-                  onClick={handleCreatePost}
-                  className="border-2 border-dashed border-emerald-500/30 rounded-2xl p-5 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors flex flex-col items-center justify-center cursor-pointer my-3"
-                >
-                  <span className="material-icons text-emerald-400 text-3xl mb-1">cloud_upload</span>
-                  <span className="text-xs font-bold text-emerald-300">写真を選択 または カメラ撮影</span>
-                  <span className="text-[9px] text-slate-400 mt-0.5">JPEG, PNG 対応・AI解析</span>
-                </div>
+                {/* ファイル選択インプット (非表示) */}
+                <input 
+                  type="file" 
+                  id="pasha-file-input" 
+                  accept="image/*" 
+                  onChange={handleImageSelect}
+                  className="hidden" 
+                />
+
+                {/* プレビュー表示または撮影エリア */}
+                {newImage ? (
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 my-3 max-h-52 bg-slate-900">
+                    <img src={newImage} alt="撮影プレビュー" className="w-full h-full object-cover" />
+                    <button 
+                      onClick={() => setNewImage(null)} 
+                      className="absolute top-2 right-2 bg-slate-950/80 text-white rounded-full p-1.5 shadow"
+                    >
+                      <span className="material-icons text-sm block">close</span>
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow flex items-center gap-1">
+                      <span className="material-icons text-xs">auto_awesome</span> AI解析完了
+                    </div>
+                  </div>
+                ) : (
+                  <label 
+                    htmlFor="pasha-file-input"
+                    className="border-2 border-dashed border-emerald-500/30 rounded-2xl p-5 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors flex flex-col items-center justify-center cursor-pointer my-3"
+                  >
+                    <span className="material-icons text-emerald-400 text-3xl mb-1">cloud_upload</span>
+                    <span className="text-xs font-bold text-emerald-300">写真を選択 または カメラ撮影</span>
+                    <span className="text-[9px] text-slate-400 mt-0.5">JPEG, PNG 対応・AI解析</span>
+                  </label>
+                )}
 
                 <button 
                   onClick={handleCreatePost}
@@ -568,89 +765,317 @@
               </div>
             )}
 
-            {/* TAB 2: 貢献・マイ（グラフィック重視・SNSシェア対応型） */}
+            {/* TAB 2: マイページ（プロフィール＆個人活動蓄積・公開範囲制御） */}
             {currentTab === 2 && (
               <div className="space-y-3 w-full">
+                
+                {/* プロフィール・ヘッダーカード */}
                 <div className="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-4 rounded-2xl shadow-xl border border-emerald-500/30 relative overflow-hidden w-full">
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-xs shadow-md flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-400 text-slate-950 font-black flex items-center justify-center text-sm shadow-md flex-shrink-0 border-2 border-amber-300">
                         {userGrade}年
                       </div>
                       <div className="min-w-0">
-                        <h2 className="font-black text-xs sm:text-sm leading-tight truncate">北大 太郎（あなた）</h2>
-                        <span className="inline-block bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-500/30 mt-0.5 truncate">
-                          🏆 キャンパスの灯火（Lv.4）
+                        <div className="flex items-center gap-1.5">
+                          <h2 className="font-black text-sm text-white leading-tight truncate">北大 太郎（あなた）</h2>
+                          <span className="material-icons text-emerald-400 text-sm">verified</span>
+                        </div>
+                        <span className="inline-block text-emerald-300 text-[10px] font-bold mt-0.5 truncate">
+                          経済学部 3年 / 🏆 キャンパスの灯火（Lv.4）
                         </span>
                       </div>
                     </div>
-                    <span className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-700 flex-shrink-0">
-                      経済学部
-                    </span>
                   </div>
 
-                  {/* 4グリッド Bento Card */}
-                  <div className="grid grid-cols-4 gap-1.5 text-center pt-1 w-full">
-                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
-                      <span className="text-slate-400 text-[8px] block">閲覧数</span>
-                      <span className="font-black text-white text-[11px]">1,420<span className="text-[8px] font-normal">PV</span></span>
+                  {/* フォロー・フォロワー ＆ インパクトStats */}
+                  <div className="flex justify-around items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/60 text-center text-xs mb-2.5">
+                    <div>
+                      <span className="text-slate-400 text-[9px] block font-medium">フォロー</span>
+                      <span className="font-black text-white text-xs">48 <span className="text-[9px] font-normal text-slate-400">人</span></span>
                     </div>
-                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
-                      <span className="text-slate-400 text-[8px] block">サンクス</span>
-                      <span className="font-black text-amber-300 text-[11px]">{userThanks}<span className="text-[8px] font-normal">pt</span></span>
+                    <div className="w-px h-6 bg-slate-800"></div>
+                    <div>
+                      <span className="text-slate-400 text-[9px] block font-medium">フォロワー</span>
+                      <span className="font-black text-emerald-300 text-xs">124 <span className="text-[9px] font-normal text-slate-400">人</span></span>
                     </div>
-                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
-                      <span className="text-slate-400 text-[8px] block">支援人数</span>
-                      <span className="font-black text-emerald-300 text-[11px]">128<span className="text-[8px] font-normal">人</span></span>
-                    </div>
-                    <div className="bg-slate-800/80 rounded-xl p-1.5 border border-slate-700/60">
-                      <span className="text-slate-400 text-[8px] block">学部ランク</span>
-                      <span className="font-black text-pink-300 text-[11px]">Top 3<span className="text-[8px] font-normal">%</span></span>
+                    <div className="w-px h-6 bg-slate-800"></div>
+                    <div>
+                      <span className="text-slate-400 text-[9px] block font-medium">総サンクス</span>
+                      <span className="font-black text-amber-300 text-xs">{userThanks} <span className="text-[9px] font-normal text-slate-400">pt</span></span>
                     </div>
                   </div>
-                </div>
 
-                {/* 🌟 SNSシェア風 スタイリッシュ貢献グラフィックカードへの導線 */}
-                <div className="bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-indigo-950/80 p-3.5 rounded-2xl border border-emerald-500/40 flex items-center justify-between gap-2.5 w-full shadow-lg relative overflow-hidden group">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-1">
-                      <span className="material-icons text-emerald-400 text-sm">auto_awesome</span>
-                      <span className="font-black text-xs text-emerald-300 tracking-tight">キャンパス貢献ハイライトカード</span>
-                    </div>
-                    <p className="text-[10px] text-slate-300 leading-snug">
-                      あなたの【1,420PV / {userThanks}サンクス】の貢献成果を、映えるグラフィックカードで確認・SNS共有できます。
-                    </p>
-                  </div>
+                  {/* SNS風グラフィックカード出力導線 */}
                   <button 
                     onClick={() => setOpenReportModal(true)}
-                    className="bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 text-[11px] font-black px-3 py-2 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1 flex-shrink-0"
+                    className="w-full bg-slate-800/90 hover:bg-slate-800 text-emerald-300 border border-emerald-500/40 text-[11px] font-extrabold py-2 rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
                   >
-                    <span className="material-icons text-sm">ios_share</span>
-                    <span>カード生成</span>
+                    <span className="material-icons text-sm text-amber-400">auto_awesome</span>
+                    <span>SNS共有用ハイライトカードを表示</span>
                   </button>
                 </div>
+
+                {/* 📁 マイページサブ切り替え（自分の投稿 / キャンパス活動ログ） */}
+                <div className="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800 gap-1 text-xs font-bold w-full">
+                  <button 
+                    onClick={() => setMyPageSubTab("posts")}
+                    className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
+                      myPageSubTab === "posts" 
+                        ? 'bg-emerald-500 text-slate-950 font-black shadow-md' 
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="material-icons text-sm">dynamic_feed</span>
+                    <span>自分の投稿</span>
+                  </button>
+                  <button 
+                    onClick={() => setMyPageSubTab("logs")}
+                    className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
+                      myPageSubTab === "logs" 
+                        ? 'bg-emerald-500 text-slate-950 font-black shadow-md' 
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="material-icons text-sm">book</span>
+                    <span>キャンパス活動ログ</span>
+                  </button>
+                </div>
+
+                {/* SUB TAB 1: 自分の投稿一覧 */}
+                {myPageSubTab === "posts" && (
+                  <div className="space-y-2.5 w-full">
+                    <div className="text-[10px] text-slate-400 flex justify-between items-center px-1">
+                      <span>過去に全体共有した情報</span>
+                      <span className="text-emerald-400 font-bold">全 1 件</span>
+                    </div>
+
+                    {posts.filter(p => p.author.includes("あなた")).map(post => (
+                      <div key={post.id} className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-1.5 text-xs">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">
+                            {post.category}
+                          </span>
+                          <span className="bg-emerald-400/10 text-emerald-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 border border-emerald-400/20">
+                            <span className="material-icons text-[10px]">public</span> 全員に公開中
+                          </span>
+                        </div>
+                        <h3 className="font-black text-white text-xs leading-snug">{post.title}</h3>
+                        <p className="text-slate-300 text-[11px] line-clamp-2">{post.content}</p>
+                        <div className="flex justify-between items-center pt-1.5 border-t border-slate-700/60 text-[10px] text-slate-400">
+                          <span>👀 {post.views} PV • 💖 {post.thanks} サンクス</span>
+                          <span className="text-slate-500">{post.time}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* SUB TAB 2: キャンパス活動ログ（個人記録・公開範囲切り替え対応） */}
+            {myPageSubTab === "logs" && (
+              <div className="space-y-2.5 w-full">
+                {/* 🤖 AI自己分析バナー */}
+                <div className="bg-gradient-to-r from-indigo-900/80 via-purple-900/80 to-slate-900 p-3 rounded-2xl border border-indigo-500/40 shadow-lg space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-1.5 font-black text-indigo-300">
+                      <span className="material-icons text-amber-400 text-sm">auto_awesome</span>
+                      <span>AI活動ログ自己分析</span>
+                    </div>
+                    <span className="text-[9px] bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30 font-bold">
+                      Gemini AI
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                    溜まった活動ログから「1年前の自分」と「隠れた自分の強み」をAIが自動で分析・フィードバックしてくれます。
+                  </p>
+                  <button 
+                    onClick={handleRunAiAnalysis}
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-black py-2 rounded-xl text-xs shadow flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span className="material-icons text-sm">psychology</span>
+                    <span>蓄積ログから自分の特徴・強みを分析する</span>
+                  </button>
+                </div>
+
+                <div className="flex justify-between items-center px-1 pt-1">
+                  <span className="text-[10px] text-slate-400">学習・メモ・キャンパス活動の蓄積 ({myLogs.length}件)</span>
+                  <button 
+                    onClick={() => setOpenLogModal(true)}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-lg flex items-center gap-1 shadow"
+                  >
+                    <span className="material-icons text-xs">add</span>
+                    <span>ログを書き残す</span>
+                  </button>
+                </div>
+
+                {myLogs.map(log => (
+                  <div key={log.id} className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2 text-xs">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="bg-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded-md">
+                        {log.category}
+                      </span>
+                      
+                      {/* 公開範囲切り替えバッジ */}
+                      <button 
+                        onClick={() => toggleLogPrivacy(log.id)}
+                        className={`px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 border transition-all ${
+                          log.privacy === "PUBLIC" 
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                            : log.privacy === "FOLLOWERS" 
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                            : 'bg-slate-700/80 text-slate-400 border-slate-600'
+                        }`}
+                      >
+                        <span className="material-icons text-[11px]">
+                          {log.privacy === "PUBLIC" ? "public" : log.privacy === "FOLLOWERS" ? "lock" : "visibility_off"}
+                        </span>
+                        <span>
+                          {log.privacy === "PUBLIC" ? "全員に公開" : log.privacy === "FOLLOWERS" ? "フォロワー限定" : "自分のみ(非公開)"}
+                        </span>
+                        <span className="material-icons text-[10px] opacity-60">swap_horiz</span>
+                      </button>
+                    </div>
+
+                    <h3 className="font-black text-white text-xs leading-snug">{log.title}</h3>
+                    
+                    {log.image && (
+                      <div className="rounded-xl overflow-hidden max-h-36 bg-slate-900 border border-slate-700 w-full my-1">
+                        <img src={log.image} alt="ログ写真" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    {log.note && <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-900/60 p-2 rounded-xl border border-slate-700/50">{log.note}</p>}
+                    
+                    <div className="text-[9px] text-slate-500 text-right font-mono pt-0.5">
+                      {log.date} 記録
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* TAB 3: プレミアム */}
-            {currentTab === 3 && (
-              <div className="bg-slate-800/90 p-4 rounded-2xl border border-slate-700 text-center space-y-3 w-full">
-                <span className="material-icons text-amber-400 text-3xl">workspace_premium</span>
-                <h2 className="font-black text-white text-sm">プレミアムパス（月額 500円）</h2>
-                <p className="text-[11px] text-slate-300 leading-relaxed max-w-xs mx-auto">
-                  過去5年分の過去問アーカイブ閲覧無制限 ＆ 広告完全非表示
+          </div>
+        )}
+
+        {/* TAB 3: プレミアム */}
+        {currentTab === 3 && (
+          <div className="space-y-3 w-full animate-fade-in">
+            {/* 👑 プレミアムヒーローカード */}
+            <div className="bg-gradient-to-br from-amber-950/80 via-slate-900 to-amber-900/40 p-4 sm:p-5 rounded-2xl border border-amber-500/40 shadow-2xl relative overflow-hidden text-center space-y-3">
+              
+              {/* 背景装飾オーラ */}
+              <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="absolute -bottom-10 -left-10 w-28 h-28 bg-yellow-500/10 rounded-full blur-xl pointer-events-none"></div>
+
+              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400/40 px-3 py-1 rounded-full text-[10px] font-black text-amber-300 shadow-inner">
+                <span className="material-icons text-xs text-amber-400">stars</span>
+                <span>CAMPUS PORTAL PREMIUM</span>
+              </div>
+
+              <div className="space-y-1">
+                <h2 className="font-black text-base sm:text-lg text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 leading-tight">
+                  キャンパスライフを最速攻略。<br/>極上のポータル体験を。
+                </h2>
+                <p className="text-[11px] text-slate-300 font-medium">
+                  テスト対策の時短から広告非表示まで、大学生活の効率を最大化。
                 </p>
-
-                <button 
-                  onClick={() => showToast("🔒 登録手続きへ進みます（デモ）")}
-                  className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black py-2.5 rounded-xl shadow-lg hover:opacity-95 text-xs"
-                >
-                  月額500円で登録する
-                </button>
               </div>
-            )}
 
-          </main>
+              {/* 💰 プランカード */}
+              <div className="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3 text-left space-y-2 backdrop-blur-md relative">
+                <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow">
+                  7日間無料体験付き
+                </div>
+
+                <div className="flex justify-between items-end border-b border-slate-800 pb-2">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block">月額プレミアムパス</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-amber-300">¥500</span>
+                      <span className="text-[10px] text-slate-400 font-bold">/ 月（税込）</span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-amber-400/90 font-bold bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                    学割適用価格
+                  </span>
+                </div>
+
+                <p className="text-[10px] text-slate-400">
+                  ※いつでもアプリ内から1タップで解約可能です。無料体験終了まで料金は発生しません。
+                </p>
+              </div>
+
+              {/* 🚀 プレミアム限定特典リスト */}
+              <div className="space-y-2 text-left pt-1">
+                <h3 className="text-[11px] font-extrabold text-amber-300 flex items-center gap-1">
+                  <span className="material-icons text-xs text-amber-400">workspace_premium</span>
+                  <span>プレミアム限定の4大特典</span>
+                </h3>
+
+                <div className="grid grid-cols-1 gap-1.5 text-xs">
+                  
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                      <span className="material-icons text-sm">auto_stories</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-[11px]">過去問・解説ノート5年分 無制限閲覧</h4>
+                      <p className="text-[10px] text-slate-400 leading-tight">過去すべてのテスト対策ファイル・講義ノートを無制限で表示＆ダウンロード。</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                      <span className="material-icons text-sm">psychology</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-[11px]">AI要約ダイレクト検索 無制限利用</h4>
+                      <p className="text-[10px] text-slate-400 leading-tight">要点だけを1秒で即回答するAI要約カードを無制限で利用可能。</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                      <span className="material-icons text-sm">block</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-[11px]">広告完全非表示＆爆速読み込み</h4>
+                      <p className="text-[10px] text-slate-400 leading-tight">すべてのバナー・スポンサー枠を非表示にし、ストレスゼロの表示速度を実現。</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                      <span className="material-icons text-sm">verified_user</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-[11px]">ゴールドVIPバッジ＆投稿の優先表示</h4>
+                      <p className="text-[10px] text-slate-400 leading-tight">投稿やコメントに黄金のVIP称号が付与され、質問・共有時の注目度UP。</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* 登録CTAボタン */}
+              <button 
+                onClick={() => showToast("🔒 無料体験（7日間）へ進みます（デモ）")}
+                className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black py-3 rounded-xl shadow-xl hover:brightness-110 active:scale-95 transition-all text-xs flex items-center justify-center gap-1.5"
+              >
+                <span className="material-icons text-sm">workspace_premium</span>
+                <span>まずは7日間無料で体験してみる</span>
+              </button>
+
+              <div className="flex items-center justify-center gap-3 text-[9px] text-slate-400 pt-0.5">
+                <span className="flex items-center gap-0.5"><span className="material-icons text-[10px] text-emerald-400">check</span> いつでも解約可能</span>
+                <span className="flex items-center gap-0.5"><span className="material-icons text-[10px] text-emerald-400">check</span> 無料期間中は¥0</span>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+      </main>
 
           {/* 浮動投稿ボタン (FAB) */}
           <button 
@@ -681,8 +1106,8 @@
               onClick={() => setCurrentTab(2)}
               className={`flex flex-col items-center gap-0.5 ${currentTab === 2 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}
             >
-              <span className="material-icons text-lg">stars</span>
-              <span className="text-[9px]">貢献・マイ</span>
+              <span className="material-icons text-lg">account_circle</span>
+              <span className="text-[9px]">マイページ</span>
             </button>
             <button 
               onClick={() => setCurrentTab(3)}
@@ -694,138 +1119,135 @@
           </nav>
 
           {/* フローティングハート */}
-          {floatingHearts.map(h => (
-            <div 
-              key={h.id} 
-              style={{ left: h.x, top: h.y }}
-              className="fixed pointer-events-none z-50 text-pink-400 flex items-center font-black text-xs animate-float-heart"
-            >
-              <span className="material-icons text-sm">favorite</span>
-              <span>+1 Thank!</span>
-            </div>
-          ))}
-
-          {/* トースト表示 */}
-          {toastMessage && (
-            <div className="fixed top-14 left-1/2 -translate-x-1/2 bg-emerald-400 text-slate-950 text-[11px] px-3.5 py-2 rounded-full shadow-2xl z-50 animate-fade-in font-black border border-white/20 whitespace-nowrap">
-              {toastMessage}
-            </div>
-          )}
-
-          {/* 投稿詳細モーダル */}
-          {selectedPost && (
-            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-3 backdrop-blur-sm">
-              <div className="bg-slate-900 w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col overflow-hidden animate-slide-up border border-slate-700">
-                <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">
-                      {selectedPost.category}
-                    </span>
-                    <span className="text-xs font-bold text-slate-300 truncate">{selectedPost.author}</span>
-                  </div>
-                  <button onClick={() => setSelectedPost(null)} className="text-slate-400 hover:text-white">
-                    <span className="material-icons text-lg">close</span>
-                  </button>
-                </div>
-
-                <div className="p-3.5 overflow-y-auto space-y-2.5 flex-1 text-xs break-words">
-                  <h2 className="font-black text-white text-sm leading-snug break-words">{selectedPost.title}</h2>
-                  <p className="text-slate-300 text-[11px] leading-relaxed break-words">{selectedPost.content}</p>
-                  
-                  {selectedPost.image && (
-                    <img src={selectedPost.image} alt="添付写真" className="rounded-xl w-full object-cover max-h-52 border border-slate-700" />
-                  )}
-
-                  {/* コメント一覧 */}
-                  <div className="pt-2 border-t border-slate-800">
-                    <h3 className="font-extrabold text-slate-200 mb-1.5 text-xs">コメント ({selectedPost.commentsCount}件)</h3>
-                    <div className="space-y-1.5 mb-2">
-                      {selectedPost.comments.map(c => (
-                        <div key={c.id} className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-[11px]">
-                          <div className="flex justify-between font-bold text-slate-300 mb-0.5">
-                            <span>{c.user}</span>
-                            <span className="text-slate-500 font-normal text-[9px]">{c.time}</span>
-                          </div>
-                          <p className="text-slate-200">{c.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* コメント入力 */}
-                <div className="p-2.5 border-t border-slate-800 bg-slate-900 flex gap-1.5">
-                  <input 
-                    type="text" 
-                    placeholder="コメントを入力..." 
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                  />
-                  <button 
-                    onClick={() => handleAddComment(selectedPost.id)}
-                    className="bg-emerald-500 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs hover:bg-emerald-400 flex-shrink-0"
-                  >
-                    送信
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 新規投稿モーダル */}
-          {openNewPostModal && (
+          {/* 📖 キャンパス活動ログ新規追加モーダル */}
+          {openLogModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-3 backdrop-blur-sm">
-              <div className="bg-slate-900 w-full max-w-md rounded-2xl p-4 space-y-3 border border-slate-700">
+              <div className="bg-slate-900 w-full max-w-md rounded-2xl p-4 space-y-3 border border-slate-700 max-h-[90vh] overflow-y-auto animate-slide-up">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                  <h3 className="font-black text-white text-xs sm:text-sm">キャンパス情報を新規投稿</h3>
-                  <button onClick={() => setOpenNewPostModal(false)} className="text-slate-400 hover:text-white">
+                  <h3 className="font-black text-white text-xs sm:text-sm">キャンパス活動ログを追加</h3>
+                  <button onClick={() => setOpenLogModal(false)} className="text-slate-400 hover:text-white">
                     <span className="material-icons text-lg">close</span>
                   </button>
                 </div>
 
                 <div className="space-y-2.5 text-xs">
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">カテゴリー</label>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">カテゴリ</label>
                     <select 
-                      value={newCategory} 
-                      onChange={(e) => setNewCategory(e.target.value)}
+                      value={logCategory} 
+                      onChange={(e) => setLogCategory(e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2 text-xs font-bold"
                     >
-                      <option value="授業・過去問">授業・過去問</option>
-                      <option value="休講・掲示板">休講・掲示板</option>
-                      <option value="グルメ・学食">グルメ・学食</option>
+                      <option value="学習・テスト対策">学習・テスト対策</option>
+                      <option value="キャンパスライフ">キャンパスライフ</option>
+                      <option value="履修・メモ">履修・メモ</option>
+                      <option value="サークル・イベント">サークル・イベント</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">タイトル</label>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">タイトル・出来事</label>
                     <input 
                       type="text" 
-                      placeholder="例：【マクロ経済学】講義ノート" 
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="例：図書館で期末の過去問演習" 
+                      value={logTitle}
+                      onChange={(e) => setLogTitle(e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">詳細情報</label>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">詳細・気づきメモ（任意）</label>
                     <textarea 
                       rows="3" 
-                      placeholder="後輩や同僚に伝えたい情報を入力..." 
-                      value={newContent}
-                      onChange={(e) => setNewContent(e.target.value)}
+                      placeholder="自分用の気づきやメモを入力..." 
+                      value={logNote}
+                      onChange={(e) => setLogNote(e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
+                  </div>
+
+                  {/* 📷 写真添付エリア */}
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">📷 写真を添付（任意）</label>
+                    <input 
+                      type="file" 
+                      id="log-photo-input" 
+                      accept="image/*" 
+                      onChange={handleLogImageSelect}
+                      className="hidden" 
+                    />
+                    {logImage ? (
+                      <div className="relative rounded-xl overflow-hidden max-h-32 bg-slate-900 border border-emerald-500/50">
+                        <img src={logImage} alt="ログ写真" className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => setLogImage(null)} 
+                          className="absolute top-1.5 right-1.5 bg-slate-950/80 text-white rounded-full p-1"
+                        >
+                          <span className="material-icons text-xs block">close</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <label 
+                        htmlFor="log-photo-input"
+                        className="border border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-3 bg-slate-800/60 flex items-center justify-center gap-2 cursor-pointer text-slate-400 hover:text-emerald-300 transition-colors"
+                      >
+                        <span className="material-icons text-base">add_a_photo</span>
+                        <span className="text-[11px] font-bold">写真を選択またはカメラ撮影</span>
+                      </label>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1 text-[11px]">🌐 公開範囲設定</label>
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px] font-bold">
+                      <button 
+                        type="button"
+                        onClick={() => setLogPrivacy("PUBLIC")}
+                        className={`p-2 rounded-xl border flex flex-col items-center gap-1 ${
+                          logPrivacy === "PUBLIC" 
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500' 
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                        }`}
+                      >
+                        <span className="material-icons text-sm">public</span>
+                        <span>全員に公開</span>
+                      </button>
+
+                      <button 
+                        type="button"
+                        onClick={() => setLogPrivacy("FOLLOWERS")}
+                        className={`p-2 rounded-xl border flex flex-col items-center gap-1 ${
+                          logPrivacy === "FOLLOWERS" 
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500' 
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                        }`}
+                      >
+                        <span className="material-icons text-sm">lock</span>
+                        <span>フォロワーのみ</span>
+                      </button>
+
+                      <button 
+                        type="button"
+                        onClick={() => setLogPrivacy("PRIVATE")}
+                        className={`p-2 rounded-xl border flex flex-col items-center gap-1 ${
+                          logPrivacy === "PRIVATE" 
+                            ? 'bg-slate-700 text-white border-slate-500' 
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                        }`}
+                      >
+                        <span className="material-icons text-sm">visibility_off</span>
+                        <span>自分のみ</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <button 
-                  onClick={handleCreatePost}
+                  onClick={handleCreateLog}
                   className="w-full bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl shadow-md text-xs hover:bg-emerald-400"
                 >
-                  投稿を完了して+10サンクスGET
+                  活動ログを保存する
                 </button>
               </div>
             </div>
@@ -923,6 +1345,44 @@
                   </p>
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {/* 🤖【AI自己分析＆成長分析】モーダル */}
+          {openAiAnalysisModal && (
+            <div className="fixed inset-0 bg-slate-950/85 z-50 flex items-center justify-center p-3 backdrop-blur-md">
+              <div className="bg-slate-900 w-full max-w-md rounded-2xl p-4 space-y-3 border border-indigo-500/50 max-h-[85vh] overflow-y-auto animate-slide-up text-white">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-icons text-amber-400 text-base">psychology</span>
+                    <h3 className="font-black text-xs sm:text-sm text-indigo-300">AI活動ログ自己分析レポート</h3>
+                  </div>
+                  <button onClick={() => setOpenAiAnalysisModal(false)} className="text-slate-400 hover:text-white">
+                    <span className="material-icons text-lg">close</span>
+                  </button>
+                </div>
+
+                {isAnalyzing ? (
+                  <div className="py-8 text-center space-y-3">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+                    <p className="text-xs font-bold text-indigo-300 animate-pulse">
+                      あなたの蓄積ログを読み込んで自己分析を生成中...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-xs leading-relaxed font-medium">
+                    <div className="bg-slate-800/80 p-3 rounded-xl border border-indigo-500/30 whitespace-pre-wrap text-slate-200">
+                      {aiAnalysisResult}
+                    </div>
+                    <button 
+                      onClick={() => setOpenAiAnalysisModal(false)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-2.5 rounded-xl text-xs shadow"
+                    >
+                      自分の振り返りを完了する
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
